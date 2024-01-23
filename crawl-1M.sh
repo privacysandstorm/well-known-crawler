@@ -31,7 +31,7 @@ results_dir=./results
 results_crawl_dir=$results_dir/$crawl_time
 mkdir -p $results_crawl_dir
 
-cat $crux_origins | parallel -j 512 --bar ./crawl_one_origin.sh $results_crawl_dir
+cat $crux_origins | parallel -j0 --bar ./crawl_one_origin.sh $results_crawl_dir
 
 cd $results_dir
 tar --zstd -c $crawl_time | aws s3 cp - s3://$s3_bucket_name/$crawl_time.tar.zst
