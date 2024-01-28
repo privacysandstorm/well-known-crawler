@@ -21,9 +21,7 @@ do
 
   mkdir -p $results_origin_dir
   # grab the 2 files if they exist
-  curl -fL -o "$results_origin_dir/$well_known_related_set" --silent --max-time 180 --connect-timeout 90 $origin_url/$well_known_url/$well_known_related_set
-  curl -fL -o "$results_origin_dir/$well_known_attestation" --silent --max-time 180 --connect-timeout 90 $origin_url/$well_known_url/$well_known_attestation
-
+  curl -fL -o "$results_origin_dir/#1" --silent --max-time 180 --connect-timeout 90 $origin_url/$well_known_url/{$well_known_related_set,$well_known_attestation}
 
   #check if valid JSON, if not discard
   if [ -f $results_origin_dir/$well_known_related_set ]; then
