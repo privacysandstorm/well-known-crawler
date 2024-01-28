@@ -36,9 +36,9 @@ results_crawl_dir=$results_dir/$crawl_time
 mkdir -p $results_crawl_dir
 
 # https://www.gnu.org/software/parallel/parallel_examples.html#example-speeding-up-fast-jobs
-parallel --pipepart -a $crux_origins -j32 -q parallel -j0 -X -N20 ./crawl_origins.sh $results_crawl_dir
+parallel --pipepart -a $crux_origins -j32 --roundrobin -q parallel -j0 -X -N20 ./crawl_origins.sh $results_crawl_dir
 
-# cd $results_dir
-# tar --zstd -c $crawl_time | aws s3 cp - s3://$s3_bucket_name/$crawl_time.tar.zst
-# # rm -r $crawl_time
-# cd ..
+cd $results_dir
+tar --zstd -c $crawl_time | aws s3 cp - s3://$s3_bucket_name/$crawl_time.tar.zst
+rm -r $crawl_time
+cd ..
