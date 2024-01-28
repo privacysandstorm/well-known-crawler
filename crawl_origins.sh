@@ -23,15 +23,27 @@ do
   # grab the 2 files if they exist
   curl -fL -o "$results_origin_dir/#1" --silent --max-time 180 --connect-timeout 90 $origin_url/$well_known_url/{$well_known_related_set,$well_known_attestation}
 
-  #check if valid JSON, if not discard
+  #check if file exists
   if [ -f $results_origin_dir/$well_known_related_set ]; then
-    if ! jq empty $results_origin_dir/$well_known_related_set 2>/dev/null; then
+    #check if size greater than 0
+    if [ -s $results_origin_dir/$well_known_related_set ]; then
+      #check if valid JSON
+      if ! jq empty $results_origin_dir/$well_known_related_set 2>/dev/null; then
+        rm $results_origin_dir/$well_known_related_set
+      fi
+    else
       rm $results_origin_dir/$well_known_related_set
     fi
   fi
 
   if [ -f $results_origin_dir/$well_known_attestation ]; then
-    if ! jq empty $results_origin_dir/$well_known_attestation 2>/dev/null; then
+    #check if size greater than 0
+    if [ -s $results_origin_dir/$well_known_attestation ]; then
+      #check if valid JSON
+      if ! jq empty $results_origin_dir/$well_known_attestation 2>/dev/null; then
+        rm $results_origin_dir/$well_known_attestation
+      fi
+    else 
       rm $results_origin_dir/$well_known_attestation
     fi
   fi
