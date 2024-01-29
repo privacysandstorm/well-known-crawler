@@ -6,4 +6,4 @@
 - different JSON depending if primary or other
 
 ## Dependencies
-- `jq`, `parallel`, `curl`, `wget`
+- Install GNU `parallel`, `jq`, `screen`, `curl`, `wget`, `dig` from `dnsutils`
