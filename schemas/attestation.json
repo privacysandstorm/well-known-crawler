@@ -1,0 +1,122 @@
+{
+    "type": "object",
+    "properties": {
+        "privacy_sandbox_api_attestations": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "attestation_parser_version": {
+                        "type": "string"
+                    },
+                    "attestation_version": {
+                        "type": "string"
+                    },
+                    "privacy_policy": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "ownership_token": {
+                        "type": "string"
+                    },
+                    "issued_seconds_since_epoch": {
+                        "type": "number"
+                    },
+                    "expiry_seconds_since_epoch": {
+                        "type": "number"
+                    },
+                    "enrollment_id": {
+                        "type": "string"
+                    },
+                    "platform_attestations": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "platform": {
+                                    "type": "string"
+                                },
+                                "attestations": {
+                                    "type": "object",
+                                    "attribution_reporting_api": {
+                                        "type": "object",
+                                        "properties": {
+                                            "ServiceNotUsedForIdentifyingUserAcrossSites": {
+                                                "type": "boolean"
+                                            }
+                                        },
+                                        "required": [
+                                            "ServiceNotUsedForIdentifyingUserAcrossSites"
+                                        ]
+                                    },
+                                    "topics_api": {
+                                        "type": "object",
+                                        "properties": {
+                                            "ServiceNotUsedForIdentifyingUserAcrossSites": {
+                                                "type": "boolean"
+                                            }
+                                        },
+                                        "required": [
+                                            "ServiceNotUsedForIdentifyingUserAcrossSites"
+                                        ]
+                                    },
+                                    "protected_audience_api": {
+                                        "type": "object",
+                                        "properties": {
+                                            "ServiceNotUsedForIdentifyingUserAcrossSites": {
+                                                "type": "boolean"
+                                            }
+                                        },
+                                        "required": [
+                                            "ServiceNotUsedForIdentifyingUserAcrossSites"
+                                        ]
+                                    },
+                                    "shared_storage_api": {
+                                        "type": "object",
+                                        "properties": {
+                                            "ServiceNotUsedForIdentifyingUserAcrossSites": {
+                                                "type": "boolean"
+                                            }
+                                        },
+                                        "required": [
+                                            "ServiceNotUsedForIdentifyingUserAcrossSites"
+                                        ]
+                                    },
+                                    "private_aggregation_api": {
+                                        "type": "object",
+                                        "properties": {
+                                            "ServiceNotUsedForIdentifyingUserAcrossSites": {
+                                                "type": "boolean"
+                                            }
+                                        },
+                                        "required": [
+                                            "ServiceNotUsedForIdentifyingUserAcrossSites"
+                                        ]
+                                    }
+                                }
+                            },
+                            "required": [
+                                "platform",
+                                "attestations"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "attestation_parser_version",
+                    "attestation_version",
+                    "privacy_policy",
+                    "ownership_token",
+                    "issued_seconds_since_epoch",
+                    "enrollment_id",
+                    "platform_attestations"
+                ]
+            }
+        }
+    },
+    "required": [
+        "privacy_sandbox_api_attestations"
+    ]
+}

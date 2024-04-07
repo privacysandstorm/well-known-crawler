@@ -1,0 +1,11 @@
+{
+    "type": "object",
+    "properties": {
+        "primary": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "primary"
+    ]
+}

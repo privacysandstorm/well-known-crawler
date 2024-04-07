@@ -1,0 +1,66 @@
+{
+    "type": "object",
+    "properties": {
+        "contact": {
+            "type": "string"
+        },
+        "ccTLDs": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            }
+        },
+        "primary": {
+            "type": "string"
+        },
+        "associatedSites": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "serviceSites": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "rationaleBySite": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "string"
+            }
+        }
+    },
+    "required": [
+        "primary"
+    ],
+    "oneOf": [
+        {
+            "required": [
+                "associatedSites"
+            ]
+        },
+        {
+            "required": [
+                "serviceSites"
+            ]
+        },
+        {
+            "required": [
+                "ccTLDs"
+            ]
+        }
+    ],
+    "dependentRequired": {
+        "associatedSites": [
+            "rationaleBySite"
+        ],
+        "serviceSites": [
+            "rationaleBySite"
+        ]
+    }
+}
