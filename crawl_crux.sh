@@ -72,14 +72,14 @@ sort -u $rws_github_origins -o $rws_github_origins
 cat $rws_github_origins >> $crux_origins_tmp
 
 #parse and check that they are only ETLD+1 with PSL
-if [ -f $crux_origins_tmp2 ]; then
-    rm $crux_origins_tmp2
+if [ -f $crux_origins ]; then
+    rm $crux_origins
 fi
-parallel -X --bar -N 1000 -a $crux_origins_tmp -I @@ "python3 etld1_only.py -i @@ >> $crux_origins_tmp2"
+parallel -X --bar -N 1000 -a $crux_origins_tmp -I @@ "python3 etld1_only.py -i @@ >> $crux_origins"
 
 #keep unique apparitions only
-uniq $crux_origins_tmp2 > $crux_origins
-rm $crux_origins_tmp $crux_origins_tmp2
+sort -u $crux_origins -o $crux_origins
+rm $crux_origins_tmp
 
 # https://www.gnu.org/software/parallel/parallel_examples.html#example-speeding-up-fast-jobs
 parallel --pipepart -a $crux_origins -j32 --roundrobin -q parallel -j0 -X -N20 ./crawl_origins.sh $results_crawl_dir
