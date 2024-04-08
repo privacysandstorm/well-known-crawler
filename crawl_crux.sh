@@ -90,5 +90,5 @@ echo "{\"start\": \"$crawl_time\", \"end\":\"$end_time\", \"sha\": \"$git_sha\",
 
 cd $results_dir
 tar --zstd -c $crawl_time | aws s3 cp - s3://$s3_bucket_name/$crawl_time.tar.zst
-rm -r $crawl_time
+# rm -r $crawl_time
 cd ..
