@@ -62,10 +62,12 @@ rws_github_origins=${results_crawl_dir}/rws_github_origins.txt
 ## RWS file from GitHub
 wget -q -O $rws_github_path $rws_github_url #update every time
 
-##extract primary, associatedSets, and serviceSites URLs
+##extract primary, associatedSets, and serviceSites URLs + ccTLDs
 jq -r '.sets[] | .primary' $rws_github_path > $rws_github_origins
 jq -r '.sets[] | select(.associatedSites != null) | .associatedSites[]' $rws_github_path >> $rws_github_origins
 jq -r '.sets[] | select(.serviceSites != null) | .serviceSites[]' $rws_github_path >> $rws_github_origins
+jq -r '.sets[] | select(.ccTLDs != null) | .ccTLDs | objects | .[] | .[]' $rws_github_path >> $rws_github_origins
+
 sort -u $rws_github_origins -o $rws_github_origins
 
 #  Add to origins temp file
