@@ -74,14 +74,20 @@ sort -u $rws_github_origins -o $rws_github_origins
 cat $rws_github_origins >> $crux_origins_tmp
 
 #parse and check that they are only ETLD+1 with PSL
+if [ -f $crux_origins_tmp2 ]; then
+    rm $crux_origins_tmp2
+fi
 if [ -f $crux_origins ]; then
     rm $crux_origins
 fi
-parallel -X --bar -N 1000 -a $crux_origins_tmp -I @@ "python3 etld1_only.py -i @@ >> $crux_origins"
+parallel -X --bar -N 1000 -a $crux_origins_tmp -I @@ "python3 etld1_only.py -i @@ >> $crux_origins_tmp2"
 
+#remove domains flagged by Guardduty
+guardduty_domains=$crux_dir/guardduty_flagged.txt
+grep -v -x -f $guardduty_domains $crux_origins_tmp2 > $crux_origins
 #keep unique apparitions only
 sort -u $crux_origins -o $crux_origins
-rm $crux_origins_tmp
+rm $crux_origins_tmp $crux_origins_tmp2
 
 # https://www.gnu.org/software/parallel/parallel_examples.html#example-speeding-up-fast-jobs
 parallel --pipepart -a $crux_origins -j32 --roundrobin -q parallel -j0 -X -N20 ./crawl_origins.sh $results_crawl_dir
