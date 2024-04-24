@@ -73,6 +73,16 @@ sort -u $rws_github_origins -o $rws_github_origins
 #  Add to origins temp file
 cat $rws_github_origins >> $crux_origins_tmp
 
+# Grab latest known origins for attestation and add to crux origins to crawl
+attestation_known_origins=attestation_known_origins.json
+aws s3 cp s3://$s3_bucket_name/$attestation_known_origins ${results_dir}/${attestation_known_origins}
+jq -r '.known_origins[] | .origin' ${results_dir}/${attestation_known_origins} >> $crux_origins_tmp
+
+# Grab latest known origins for RWS and add to crux origins to crawl
+rws_known_origins=rws_known_origins.json
+aws s3 cp s3://$s3_bucket_name/$rws_known_origins ${results_dir}/${rws_known_origins}
+jq -r '.known_origins[] | .origin' ${results_dir}/${rws_known_origins} >> $crux_origins_tmp
+
 #parse and check that they are only ETLD+1 with PSL
 if [ -f $crux_origins_tmp2 ]; then
     rm $crux_origins_tmp2
@@ -83,8 +93,10 @@ fi
 parallel -X --bar -N 1000 -a $crux_origins_tmp -I @@ "python3 etld1_only.py -i @@ >> $crux_origins_tmp2"
 
 #remove domains flagged by Guardduty
-guardduty_domains=$crux_dir/guardduty_flagged.txt
-grep -v -x -f $guardduty_domains $crux_origins_tmp2 > $crux_origins
+guardduty_origins=origins_flagged_by_guardduty.txt
+aws s3 cp s3://$s3_bucket_name/$guardduty_origins ${results_dir}/${guardduty_origins}
+grep -v -x -f ${results_dir}/${guardduty_origins} $crux_origins_tmp2 > $crux_origins
+
 #keep unique apparitions only
 sort -u $crux_origins -o $crux_origins
 rm $crux_origins_tmp $crux_origins_tmp2
@@ -96,7 +108,14 @@ end_time=$(date --utc "+%Y_%m_%d-%H_%M_%S")
 #Overwrite metadata
 echo "{\"start\": \"$crawl_time\", \"end\":\"$end_time\", \"sha\": \"$git_sha\", \"ips\": \"$ips\", \"crux\": \"$crux_url\", \"crux_top\": \"$crux_top\" }" > $results_crawl_dir/crawl.metadata
 
+# extract known origins
+./post_crawl_analysis.sh $crawl_time
+
 cd $results_dir
+#upload folder
 tar --zstd -c $crawl_time | aws s3 cp - s3://$s3_bucket_name/$crawl_time.tar.zst
-# rm -r $crawl_time
+#upload known origins for attestation and RWS + api list
+aws s3 cp ${results_dir}/${attestation_known_origins} s3://$s3_bucket_name/$attestation_known_origins
+aws s3 cp ${results_dir}/${rws_known_origins} s3://$s3_bucket_name/$rws_known_origins
+aws s3 cp ${results_dir}/attestation_known_apis.tsv s3://$s3_bucket_name/attestation_known_apis.tsv
 cd ..
