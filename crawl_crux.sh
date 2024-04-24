@@ -115,7 +115,7 @@ cd $results_dir
 #upload folder
 tar --zstd -c $crawl_time | aws s3 cp - s3://$s3_bucket_name/$crawl_time.tar.zst
 #upload known origins for attestation and RWS + api list
-aws s3 cp ${results_dir}/${attestation_known_origins} s3://$s3_bucket_name/$attestation_known_origins
-aws s3 cp ${results_dir}/${rws_known_origins} s3://$s3_bucket_name/$rws_known_origins
-aws s3 cp ${results_dir}/attestation_known_apis.tsv s3://$s3_bucket_name/attestation_known_apis.tsv
+aws s3 cp ${attestation_known_origins} s3://$s3_bucket_name/$attestation_known_origins
+aws s3 cp ${rws_known_origins} s3://$s3_bucket_name/$rws_known_origins
+aws s3 cp attestation_known_apis.tsv s3://$s3_bucket_name/attestation_known_apis.tsv
 cd ..
