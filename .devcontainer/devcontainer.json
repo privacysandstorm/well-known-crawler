@@ -1,6 +1,9 @@
 {
     "name": "well-known-crawler",
-    "dockerFile": "Dockerfile",
+    "build": {
+        "dockerfile": "../Dockerfile",
+        "target": "vscode_dev"
+    },
     "postCreateCommand": "",
     "customizations": {
         "vscode": {

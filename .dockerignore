@@ -1,0 +1,10 @@
+.devcontainer/
+.git/
+crux/
+results/
+
+.dockerignore
+.gitignore
+Dockerfile
+.gitlab-ci.yml
+

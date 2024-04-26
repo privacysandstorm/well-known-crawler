@@ -1,86 +1,65 @@
 #!/bin/bash
 
-# Variables
-crux_top=1000000 #top origins we scan
-crux_url=https://github.com/zakird/crux-top-lists/raw/main/data/global/202310.csv.gz #october 2023
-crux_dir=./crux/
-crux_gz_path=${crux_dir}crux.csv.gz
-crux_csv_path=${crux_dir}crux.csv
-crux_origins=${crux_dir}crux_origins_${crux_top}.txt
+if [[ -z "$CRUX_URL" || -z "$CRUX_TOP" || -z "$S3_DATA_BUCKET" || -z "$RWS_URL" ]];then
+    echo 'One or more environment variables are undefined'
+    exit 1
+fi
+
+# Variables and filenames
+crux_dir=./crux
+crux_gz=${crux_dir}/crux.csv.gz
+crux_csv=${crux_dir}/crux.csv
+crux_origins=${crux_dir}/crux_${CRUX_TOP}.txt
 crux_origins_tmp=${crux_origins}.tmp
 crux_origins_tmp2=${crux_origins}.tmp2
 
-s3_bucket_name=well-known-resources
+results_dir=./results
+crawl_time=$(date --utc "+%Y_%m_%d-%H_%M_%S")
+results_crawl_dir=$results_dir/$crawl_time
 
-mkdir -p $crux_dir
+rws_github=${results_crawl_dir}/rws_github.json
+
+#S3 bucket filenames
+attestation_known_origins=attestation_known_origins.json
+rws_known_origins=rws_known_origins.json
+guardduty_origins=origins_flagged_by_guardduty.txt
+
+mkdir -p $crux_dir $results_crawl_dir
 
 # Metadata
-git_sha=$(git rev-parse --short HEAD)
 ips="$(dig @resolver1.opendns.com myip.opendns.com +short)$(dig -t aaaa +short myip.opendns.com @resolver1.opendns.com)"
-
-# Check if git status returns anything
-if [ $(git status --porcelain | wc -l) -gt 0 ]
-then
-    while true; do
-        read -p "There are modifications in this Git repository not committed. Continue with crawl? (y or n) :" answer
-        case $answer in
-            [Yy]* ) break;;
-            [Nn]* ) exit;;
-            * ) echo "Please answer yes or no.";;
-        esac
-    done
-fi
-
-crawl_time=$(date --utc "+%Y_%m_%d-%H_%M_%S")
-results_dir=./results
-results_crawl_dir=$results_dir/$crawl_time
-mkdir -p $results_crawl_dir
-
-#Write metadata
-echo "{\"start\": \"$crawl_time\", \"sha\": \"$git_sha\", \"ips\": \"$ips\", \"crux\": \"$crux_url\", \"crux_top\": \"$crux_top\" }" > $results_crawl_dir/crawl.metadata
+echo "{\"start\": \"$crawl_time\", \"ips\": \"$ips\", \"crux\": \"$CRUX_URL\", \"crux_top\": \"$CRUX_TOP\" }" > $results_crawl_dir/crawl.metadata
 
 # CrUX top-list
 ## Check that crux origins are created
-if [ ! -f $crux_csv_path ]
+if [ ! -f $crux_csv ]
 then
-    wget -q -O $crux_gz_path $crux_url
-    gzip -cdk $crux_gz_path > $crux_csv_path
-    rm $crux_gz_path
+    wget -q -O $crux_gz $CRUX_URL
+    gzip -cdk $crux_gz > $crux_csv
+    rm $crux_gz
 fi
 ## Extract origins, discard rank, keep only https
-head -$(($crux_top + 1)) $crux_csv_path > $crux_origins_tmp2 && \
+head -$(($crux_top + 1)) $crux_csv > $crux_origins_tmp2 && \
 sed -i '1d' $crux_origins_tmp2 && \
 sed -nr "s/(.*),.*/\1/p" $crux_origins_tmp2 > $crux_origins_tmp && \
 rm $crux_origins_tmp2 && \
 sed -i '/^http:/d' $crux_origins_tmp
 
-
-rws_github_url=https://raw.githubusercontent.com/GoogleChrome/related-website-sets/main/related_website_sets.JSON
-rws_github_path=${results_crawl_dir}/rws_github.json
-rws_github_origins=${results_crawl_dir}/rws_github_origins.txt
-
 ## RWS file from GitHub
-wget -q -O $rws_github_path $rws_github_url #update every time
+wget -q -O $rws_github $RWS_URL #update every time
 
 ##extract primary, associatedSets, and serviceSites URLs + ccTLDs
-jq -r '.sets[] | .primary' $rws_github_path > $rws_github_origins
-jq -r '.sets[] | select(.associatedSites != null) | .associatedSites[]' $rws_github_path >> $rws_github_origins
-jq -r '.sets[] | select(.serviceSites != null) | .serviceSites[]' $rws_github_path >> $rws_github_origins
-jq -r '.sets[] | select(.ccTLDs != null) | .ccTLDs | objects | .[] | .[]' $rws_github_path >> $rws_github_origins
-
-sort -u $rws_github_origins -o $rws_github_origins
-
-#  Add to origins temp file
-cat $rws_github_origins >> $crux_origins_tmp
+jq -r '.sets[] | .primary' $rws_github >> $crux_origins_tmp
+jq -r '.sets[] | select(.associatedSites != null) | .associatedSites[]' $rws_github >> $crux_origins_tmp
+jq -r '.sets[] | select(.serviceSites != null) | .serviceSites[]' $rws_github >> $crux_origins_tmp
+jq -r '.sets[] | select(.ccTLDs != null) | .ccTLDs | objects | .[] | .[]' $rws_github >> $crux_origins_tmp
 
 # Grab latest known origins for attestation and add to crux origins to crawl
-attestation_known_origins=attestation_known_origins.json
-aws s3 cp s3://$s3_bucket_name/$attestation_known_origins ${results_dir}/${attestation_known_origins}
+aws s3 cp s3://$S3_DATA_BUCKET/$attestation_known_origins ${results_dir}/${attestation_known_origins}
 jq -r '.known_origins[] | .origin' ${results_dir}/${attestation_known_origins} >> $crux_origins_tmp
 
 # Grab latest known origins for RWS and add to crux origins to crawl
-rws_known_origins=rws_known_origins.json
-aws s3 cp s3://$s3_bucket_name/$rws_known_origins ${results_dir}/${rws_known_origins}
+aws s3 cp s3://$S3_DATA_BUCKET/$rws_known_origins ${results_dir}/${rws_known_origins}
 jq -r '.known_origins[] | .origin' ${results_dir}/${rws_known_origins} >> $crux_origins_tmp
 
 #parse and check that they are only ETLD+1 with PSL
@@ -93,8 +72,7 @@ fi
 parallel -X --bar -N 1000 -a $crux_origins_tmp -I @@ "python3 etld1_only.py -i @@ >> $crux_origins_tmp2"
 
 #remove domains flagged by Guardduty
-guardduty_origins=origins_flagged_by_guardduty.txt
-aws s3 cp s3://$s3_bucket_name/$guardduty_origins ${results_dir}/${guardduty_origins}
+aws s3 cp s3://$S3_DATA_BUCKET/$guardduty_origins ${results_dir}/${guardduty_origins}
 grep -v -x -f ${results_dir}/${guardduty_origins} $crux_origins_tmp2 > $crux_origins
 
 #keep unique apparitions only
@@ -104,18 +82,11 @@ rm $crux_origins_tmp $crux_origins_tmp2
 # https://www.gnu.org/software/parallel/parallel_examples.html#example-speeding-up-fast-jobs
 parallel --pipepart -a $crux_origins -j32 --roundrobin -q parallel -j0 -X -N20 ./crawl_origins.sh $results_crawl_dir
 
-end_time=$(date --utc "+%Y_%m_%d-%H_%M_%S")
 #Overwrite metadata
-echo "{\"start\": \"$crawl_time\", \"end\":\"$end_time\", \"sha\": \"$git_sha\", \"ips\": \"$ips\", \"crux\": \"$crux_url\", \"crux_top\": \"$crux_top\" }" > $results_crawl_dir/crawl.metadata
+end_time=$(date --utc "+%Y_%m_%d-%H_%M_%S")
+echo "{\"start\": \"$crawl_time\", \"end\":\"$end_time\", \"ips\": \"$ips\", \"crux\": \"$CRUX_URL\", \"crux_top\": \"$CRUX_TOP\" }" > $results_crawl_dir/crawl.metadata
 
-# extract known origins
-./post_crawl_analysis.sh $crawl_time
-
+#upload folder to s3
 cd $results_dir
-#upload folder
-tar --zstd -c $crawl_time | aws s3 cp - s3://$s3_bucket_name/$crawl_time.tar.zst
-#upload known origins for attestation and RWS + api list
-aws s3 cp ${attestation_known_origins} s3://$s3_bucket_name/$attestation_known_origins
-aws s3 cp ${rws_known_origins} s3://$s3_bucket_name/$rws_known_origins
-aws s3 cp attestation_known_apis.tsv s3://$s3_bucket_name/attestation_known_apis.tsv
+tar --zstd -c $crawl_time | aws s3 cp - s3://$S3_DATA_BUCKET/$crawl_time.tar.zst
 cd ..
