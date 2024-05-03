@@ -82,6 +82,11 @@ rm $crux_origins_tmp $crux_origins_tmp2
 # https://www.gnu.org/software/parallel/parallel_examples.html#example-speeding-up-fast-jobs
 parallel --pipepart -a $crux_origins --jobs 200% --roundrobin -q parallel -j0 -X -N20 ./crawl_origins.sh $results_crawl_dir
 
+#parallel should normally only exit when all jobs are over
+while [ -n "$(ps -C curl -o pid=)" ]; do
+	wait
+done
+
 #Overwrite metadata
 end_time=$(date --utc "+%Y_%m_%d-%H_%M_%S")
 echo "{\"start\": \"$crawl_time\", \"end\":\"$end_time\", \"ips\": \"$ips\", \"crux\": \"$CRUX_URL\", \"crux_top\": \"$CRUX_TOP\" }" > $results_crawl_dir/crawl.metadata
