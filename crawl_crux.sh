@@ -39,14 +39,11 @@ then
     rm $crux_gz
 fi
 ## Extract origins, discard rank, keep only https
-head -$(($crux_top + 1)) $crux_csv > $crux_origins_tmp2 && \
+head -$(($CRUX_TOP + 1)) $crux_csv > $crux_origins_tmp2 && \
 sed -i '1d' $crux_origins_tmp2 && \
 sed -nr "s/(.*),.*/\1/p" $crux_origins_tmp2 > $crux_origins_tmp && \
 rm $crux_origins_tmp2 && \
 sed -i '/^http:/d' $crux_origins_tmp
-
-size=$(wc -l $crux_origins_tmp | awk '{ print $1 }')
-echo $size
 
 ## RWS file from GitHub
 wget -q -O $rws_github $RWS_URL #update every time
@@ -65,9 +62,6 @@ jq -r '.known_origins[] | .origin' ${results_dir}/${attestation_known_origins} >
 aws s3 cp s3://$S3_DATA_BUCKET/$rws_known_origins ${results_dir}/${rws_known_origins}
 jq -r '.known_origins[] | .origin' ${results_dir}/${rws_known_origins} >> $crux_origins_tmp
 
-size=$(wc -l $crux_origins_tmp | awk '{ print $1 }')
-echo $size
-
 #parse and check that they are only ETLD+1 with PSL
 if [ -f $crux_origins_tmp2 ]; then
     rm $crux_origins_tmp2
@@ -85,16 +79,14 @@ grep -v -x -f ${results_dir}/${guardduty_origins} $crux_origins_tmp2 > $crux_ori
 sort -u $crux_origins -o $crux_origins
 rm $crux_origins_tmp $crux_origins_tmp2
 
-
 echo "Launching curl crawls"
-size=$(wc -l $crux_origins_tmp | awk '{ print $1 }')
-echo $size
 
 # https://www.gnu.org/software/parallel/parallel_examples.html#example-speeding-up-fast-jobs
 parallel --pipepart -a $crux_origins --jobs 200% --roundrobin -q parallel -j0 -X -N20 ./crawl_origins.sh $results_crawl_dir
 
-#parallel should normally only exit when all jobs are over
+#parallel should normally only exit when all jobs are over, let's check
 while [ -n "$(ps -C curl -o pid=)" ]; do
+    echo "waiting for curl"
 	wait
 done
 
