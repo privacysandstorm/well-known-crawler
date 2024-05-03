@@ -9,7 +9,8 @@ RUN apt-get update && apt-get install -y python3 \
     parallel \
     locales \
     unzip \
-    wget && \
+    wget \
+    zstd && \
     apt-get clean autoclean && \
     apt-get autoremove
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \

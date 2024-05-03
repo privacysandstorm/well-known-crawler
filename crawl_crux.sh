@@ -69,7 +69,7 @@ fi
 if [ -f $crux_origins ]; then
     rm $crux_origins
 fi
-parallel -X --bar -N 1000 -a $crux_origins_tmp -I @@ "python3 etld1_only.py -i @@ >> $crux_origins_tmp2"
+parallel -X -N 1000 -a $crux_origins_tmp -I @@ "python3 etld1_only.py -i @@ >> $crux_origins_tmp2"
 
 #remove domains flagged by Guardduty
 aws s3 cp s3://$S3_DATA_BUCKET/$guardduty_origins ${results_dir}/${guardduty_origins}
