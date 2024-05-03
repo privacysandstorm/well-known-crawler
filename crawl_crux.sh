@@ -80,7 +80,7 @@ sort -u $crux_origins -o $crux_origins
 rm $crux_origins_tmp $crux_origins_tmp2
 
 # https://www.gnu.org/software/parallel/parallel_examples.html#example-speeding-up-fast-jobs
-parallel --pipepart -a $crux_origins -j32 --roundrobin -q parallel -j0 -X -N20 ./crawl_origins.sh $results_crawl_dir
+parallel --pipepart -a $crux_origins --jobs 200% --roundrobin -q parallel -j0 -X -N20 ./crawl_origins.sh $results_crawl_dir
 
 #Overwrite metadata
 end_time=$(date --utc "+%Y_%m_%d-%H_%M_%S")
