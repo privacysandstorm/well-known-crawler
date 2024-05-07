@@ -24,8 +24,12 @@ do
 
   #RWS
   rws_file=$rws_dir/$origin_url_stripped.json
-  # grab file if it exists
-  curl -fL -o $rws_file --silent --max-time 180 --connect-timeout 90 $origin_url/$well_known_url/$well_known_related_set
+  #Attestation
+  attestation_file=$attestation_dir/$origin_url_stripped.json
+
+  # grab files if they exist
+  curl -fL -o $rws_file -o $attestation_file --silent --max-time 180 --connect-timeout 90 $origin_url/$well_known_url/$well_known_related_set $origin_url/$well_known_url/$well_known_attestation
+
   #check if file exists
   if [ -f $rws_file ]; then
   #check if valid JSON
@@ -34,11 +38,6 @@ do
       rm $rws_file
     fi
   fi
-
-  #Attestation
-  attestation_file=$attestation_dir/$origin_url_stripped.json
-  # grab file if it exists
-  curl -fL -o $attestation_file --silent --max-time 180 --connect-timeout 90 $origin_url/$well_known_url/$well_known_attestation
   #check if file exists
   if [ -f $attestation_file ]; then
     #check if valid JSON

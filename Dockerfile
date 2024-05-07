@@ -1,4 +1,4 @@
-FROM debian:latest as base
+FROM amd64/debian:latest as base
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y python3 \
     python3-pip \
@@ -19,7 +19,7 @@ RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
 ENV LANG en_US.UTF-8
 RUN pip3 install --break-system-packages --upgrade pip && \
     pip3 install --break-system-packages black jsonschema publicsuffixlist
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && \
     ./aws/install
 
