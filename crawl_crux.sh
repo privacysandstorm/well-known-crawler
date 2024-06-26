@@ -5,6 +5,9 @@ if [[ -z "$CRUX_URL" || -z "$CRUX_TOP" || -z "$S3_DATA_BUCKET" || -z "$RWS_URL" 
     exit 1
 fi
 
+ulimit -a
+exit
+
 # Variables and filenames
 crux_dir=./crux
 crux_gz=${crux_dir}/crux.csv.gz
