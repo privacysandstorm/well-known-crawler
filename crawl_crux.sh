@@ -23,6 +23,7 @@ rws_github=${results_crawl_dir}/rws_github.json
 attestation_known_origins=attestation_known_origins.json
 rws_known_origins=rws_known_origins.json
 guardduty_origins=origins_flagged_by_guardduty.txt
+well_known_additional_origins=well_known_additional_origins.txt
 
 mkdir -p $crux_dir $results_crawl_dir
 
@@ -61,6 +62,10 @@ jq -r '.known_origins[] | .origin' ${results_dir}/${attestation_known_origins} >
 # Grab latest known origins for RWS and add to crux origins to crawl
 aws s3 cp s3://$S3_DATA_BUCKET/$rws_known_origins ${results_dir}/${rws_known_origins}
 jq -r '.known_origins[] | .origin' ${results_dir}/${rws_known_origins} >> $crux_origins_tmp
+
+# Grab well known additional urls and add to crux origins to crawl
+aws s3 cp s3://$S3_DATA_BUCKET/$well_known_additional_origins ${results_dir}/${well_known_additional_origins}
+cat ${results_dir}/${well_known_additional_origins} >> $crux_origins_tmp
 
 #parse and check that they are only ETLD+1 with PSL
 if [ -f $crux_origins_tmp2 ]; then
