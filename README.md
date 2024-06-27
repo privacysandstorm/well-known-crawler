@@ -23,10 +23,14 @@ the instructions in this [guide](https://gist.github.com/yohhaan/b492e165b77a84d
 
 ## Environment Variables
 
-- `CRUX_URL`: The URL to the cached version of CrUX to use (see https://github.com/zakird/crux-top-lists/tree/main/data/global)
-- `CRUX_TOP`: Specify how many first top origins to crawl
-- `S3_DATA_BUCKET`: The s3 bucket where the crawl raw results are saved
-- `RWS_URL`: The URL to the RWS canonical set
+**Required:**
+- `CRUX_URL`: The URL to the cached version of CrUX to use (https://github.com/zakird/crux-top-lists/raw/main/data/global/current.csv.gz)
+- `CRUX_TOP`: Specify how many first top origins to crawl (1000000)
+- `RWS_URL`: The URL to the RWS canonical set  (https://raw.githubusercontent.com/GoogleChrome/related-website-sets/main/related_website_sets.JSON)
+
+**Optional:**
+- `S3_DATA_BUCKET`: The s3 bucket where the crawl raw results are saved, if
+  undefined, we are assuming local run.
 
 ## Usage
 
@@ -37,7 +41,7 @@ the instructions in this [guide](https://gist.github.com/yohhaan/b492e165b77a84d
 ## Gitlab CI/CD Variables
 
 Define the following CI variables to have Gitlab CI building and pushing the
-image automatically:
+Docker image automatically so that ECS task is up to date:
 - `AWS_ACCOUNT_ID`: the AWS account ID
 - `AWS_REGION`: the AWS region to use
 - `AWS_ACCESS_KEY_ID`: of an IAM user with the `AmazonEC2ContainerRegistryPowerUser` policy

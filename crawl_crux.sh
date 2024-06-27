@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ -z "$CRUX_URL" || -z "$CRUX_TOP" || -z "$S3_DATA_BUCKET" || -z "$RWS_URL" ]];then
+if [[ -z "$CRUX_URL" || -z "$CRUX_TOP" || -z "$RWS_URL" ]];then
     echo 'One or more environment variables are undefined'
     exit 1
 fi
@@ -55,17 +55,21 @@ jq -r '.sets[] | select(.associatedSites != null) | .associatedSites[]' $rws_git
 jq -r '.sets[] | select(.serviceSites != null) | .serviceSites[]' $rws_github >> $crux_origins_tmp
 jq -r '.sets[] | select(.ccTLDs != null) | .ccTLDs | objects | .[] | .[]' $rws_github >> $crux_origins_tmp
 
-# Grab latest known origins for attestation and add to crux origins to crawl
-aws s3 cp s3://$S3_DATA_BUCKET/$attestation_known_origins ${results_dir}/${attestation_known_origins}
-jq -r '.known_origins[] | .origin' ${results_dir}/${attestation_known_origins} >> $crux_origins_tmp
+if [[ -z "$S3_DATA_BUCKET" ]];then
+    echo 'S3_DATA_BUCKET undefined, assuming local run: not grabbing files from S3 (known origins, additional origins)'
+else
+    # Grab latest known origins for attestation and add to crux origins to crawl
+    aws s3 cp s3://$S3_DATA_BUCKET/$attestation_known_origins ${results_dir}/${attestation_known_origins}
+    jq -r '.known_origins[] | .origin' ${results_dir}/${attestation_known_origins} >> $crux_origins_tmp
 
-# Grab latest known origins for RWS and add to crux origins to crawl
-aws s3 cp s3://$S3_DATA_BUCKET/$rws_known_origins ${results_dir}/${rws_known_origins}
-jq -r '.known_origins[] | .origin' ${results_dir}/${rws_known_origins} >> $crux_origins_tmp
+    # Grab latest known origins for RWS and add to crux origins to crawl
+    aws s3 cp s3://$S3_DATA_BUCKET/$rws_known_origins ${results_dir}/${rws_known_origins}
+    jq -r '.known_origins[] | .origin' ${results_dir}/${rws_known_origins} >> $crux_origins_tmp
 
-# Grab well known additional urls and add to crux origins to crawl
-aws s3 cp s3://$S3_DATA_BUCKET/$well_known_additional_origins ${results_dir}/${well_known_additional_origins}
-cat ${results_dir}/${well_known_additional_origins} >> $crux_origins_tmp
+    # Grab well known additional origins and add to crux origins to crawl
+    aws s3 cp s3://$S3_DATA_BUCKET/$well_known_additional_origins ${results_dir}/${well_known_additional_origins}
+    cat ${results_dir}/${well_known_additional_origins} >> $crux_origins_tmp
+fi
 
 #parse and check that they are only ETLD+1 with PSL
 if [ -f $crux_origins_tmp2 ]; then
@@ -76,12 +80,18 @@ if [ -f $crux_origins ]; then
 fi
 parallel -X -N 1000 -a $crux_origins_tmp -I @@ "python3 etld1_only.py -i @@ >> $crux_origins_tmp2"
 
-#remove domains flagged by Guardduty
-aws s3 cp s3://$S3_DATA_BUCKET/$guardduty_origins ${results_dir}/${guardduty_origins}
-grep -v -x -f ${results_dir}/${guardduty_origins} $crux_origins_tmp2 > $crux_origins
+if [[ -z "$S3_DATA_BUCKET" ]];then
+    echo 'S3_DATA_BUCKET undefined, assuming local run: not grabbing files from S3 (guardduty origins)'
+    #keep unique apparitions only
+    sort -u $crux_origins_tmp2 -o $crux_origins
+else
+    #remove domains flagged by Guardduty
+    aws s3 cp s3://$S3_DATA_BUCKET/$guardduty_origins ${results_dir}/${guardduty_origins}
+    grep -v -x -f ${results_dir}/${guardduty_origins} $crux_origins_tmp2 > $crux_origins
+    #keep unique apparitions only
+    sort -u $crux_origins -o $crux_origins
+fi
 
-#keep unique apparitions only
-sort -u $crux_origins -o $crux_origins
 rm $crux_origins_tmp $crux_origins_tmp2
 
 echo "Launching curl crawls"
@@ -94,9 +104,13 @@ parallel --pipepart -a $crux_origins --jobs 200% --roundrobin -q parallel -j0 -X
 end_time=$(date --utc "+%Y_%m_%d-%H_%M_%S")
 echo "{\"start\": \"$crawl_time\", \"end\":\"$end_time\", \"ips\": \"$ips\", \"crux\": \"$CRUX_URL\", \"crux_top\": \"$CRUX_TOP\" }" > $results_crawl_dir/crawl.metadata
 
-#upload folder to s3
-cd $results_dir
-tar --zstd -c $crawl_time | aws s3 cp - s3://$S3_DATA_BUCKET/$crawl_time.tar.zst
-cd ..
+if [[ -z "$S3_DATA_BUCKET" ]];then
+    echo 'S3_DATA_BUCKET undefined, assuming local run: not uploading results to s3'
+else
+    #upload folder to s3
+    cd $results_dir
+    tar --zstd -c $crawl_time | aws s3 cp - s3://$S3_DATA_BUCKET/$crawl_time.tar.zst
+    cd ..
+fi
 
 echo "Crawl finished"
