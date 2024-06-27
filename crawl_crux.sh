@@ -98,7 +98,7 @@ echo "Launching curl crawls"
 
 # https://www.gnu.org/software/parallel/parallel_examples.html#example-speeding-up-fast-jobs
 # https://unix.stackexchange.com/questions/124032/can-gnu-parallel-execute-more-parallel-processes
-parallel --pipepart -a $crux_origins --jobs 200% --roundrobin -q parallel -j0 -X -N20 ./crawl_origins.sh $results_crawl_dir
+parallel --pipepart -a $crux_origins -j20 --roundrobin -q parallel -j100 -X -N20 ./crawl_origins.sh $results_crawl_dir
 
 #Overwrite metadata
 end_time=$(date --utc "+%Y_%m_%d-%H_%M_%S")
